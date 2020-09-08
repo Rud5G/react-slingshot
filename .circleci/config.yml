@@ -1,0 +1,51 @@
+version: 2.1
+defaults: &defaults
+  docker:
+    - image: circleci/node:13.8.0
+  working_directory: ~/
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: npm i
+      - run: npm run lint
+      - save_cache:
+          key: "npm_packages"
+          paths:
+            - '/src/node_modules'
+
+  test:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - "npm-packages"
+      - run: npm i
+      - run: npm run test
+
+  analyze:
+    <<: *defaults
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - "npm-packages"
+      - run: npm i
+      - run: npm run audit
+
+
+# Orchestrate or schedule a set of jobs
+workflows:
+  # Name the workflow "welcome"
+  welcome:
+    jobs:
+      - build
+      - test:
+          requires:
+            - build
+      - analyze:
+          requires:
+            - test
